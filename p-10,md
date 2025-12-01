@@ -1,0 +1,251 @@
+# **Práctica: Implementación de Parallax Scrolling utilizando Pygame**
+
+## **1. Introducción**
+
+El objetivo de esta práctica es que el estudiante comprenda y aplique el concepto de *parallax scrolling*, una técnica empleada en videojuegos de plataformas para simular profundidad mediante el desplazamiento de varias capas de fondo a diferentes velocidades. Esta práctica utiliza los elementos gráficos del paquete **"game_background_1"**, disponible para uso libre y descargable desde el repositorio oficial de Kenney.
+
+En esta actividad se trabajará con las capas que componen el fondo, tales como el cielo, nubes, rocas y elementos adicionales, para generar un desplazamiento continuo e infinito. Se explicará detalladamente la lógica empleada para cargar las imágenes, organizarlas en capas, asignarles velocidades relativas y programar el desplazamiento horizontal continuo.
+
+---
+
+## **2. Enlace del material gráfico utilizado**
+
+El recurso utilizado proviene del paquete oficial:
+
+**game_backgrounds (Kenney):**
+[https://kenney.nl/assets/game-backgrounds](https://kenney.nl/assets/game-backgrounds)
+
+---
+
+## **3. Organización del proyecto**
+
+Se recomienda organizar la estructura del proyecto de la siguiente manera:
+
+```
+practica_parallax/
+│── main.py
+│── assets/
+      └── game_background_1/
+            └── layers/
+                sky.png
+                clouds_1.png
+                clouds_2.png
+                clouds_3.png
+                clouds_4.png
+                rocks_1.png
+                rocks_2.png
+```
+
+La carpeta `layers` contiene las imágenes que se utilizarán de forma independiente para generar el efecto de desplazamiento con profundidad.
+
+---
+
+## **4. Teoría esencial sobre parallax scrolling**
+
+El *parallax scrolling* es una técnica de animación donde las capas más cercanas al observador se desplazan más rápido que las capas lejanas. Esto genera una ilusión de profundidad tridimensional dentro de un entorno 2D.
+
+* Capas traseras → se desplazan lentamente.
+* Capas intermedias → velocidad moderada.
+* Capas delanteras → se desplazan más rápido.
+
+El efecto se programa realizando dos acciones fundamentales:
+
+1. **Movimiento horizontal continuo de cada capa**, con una velocidad distinta.
+2. **Dibujo duplicado de cada capa** (una imagen seguida de otra) para crear un desplazamiento infinito sin cortes.
+
+---
+
+## **5. Desarrollo de la práctica**
+
+### **Bloque 1. Carga y visualización estática de capas**
+
+**Descripción:**
+En este bloque se cargan las imágenes correspondientes a cada capa del fondo. El propósito es familiarizarse con las capas del material gráfico y verificar que se dibujan correctamente en pantalla, sin movimiento. Esto sirve como base para los siguientes bloques.
+
+**Código del Bloque 1:**
+
+```python
+import pygame
+pygame.init()
+
+# Pantalla
+ANCHO, ALTO = 1280, 720
+pantalla = pygame.display.set_mode((ANCHO, ALTO))
+pygame.display.set_caption("Parallax — Bloque 1")
+
+# Cargar capas (orden desde el fondo hacia adelante)
+capas = [
+    pygame.image.load("assets/game_background_1/layers/sky.png"),
+    pygame.image.load("assets/game_background_1/layers/clouds_1.png"),
+    pygame.image.load("assets/game_background_1/layers/clouds_2.png"),
+    pygame.image.load("assets/game_background_1/layers/clouds_3.png"),
+    pygame.image.load("assets/game_background_1/layers/clouds_4.png"),
+    pygame.image.load("assets/game_background_1/layers/rocks_1.png"),
+    pygame.image.load("assets/game_background_1/layers/rocks_2.png")
+]
+
+reloj = pygame.time.Clock()
+ejecutando = True
+
+while ejecutando:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            ejecutando = False
+
+    # Dibujar todas las capas sin movimiento
+    for capa in capas:
+        pantalla.blit(capa, (0, 0))
+
+    pygame.display.update()
+    reloj.tick(60)
+
+pygame.quit()
+```
+
+---
+
+### **Bloque 2. Implementación del desplazamiento con efecto parallax**
+
+**Descripción:**
+En este bloque se agregan velocidades diferentes a cada capa y se implementa el movimiento horizontal. Para evitar cortes en el desplazamiento, cada capa se dibuja dos veces: una en su posición actual y otra inmediatamente después de su ancho. Cuando una imagen termina de desplazarse completamente a la izquierda, se reinicia su posición hacia la derecha, creando un bucle continuo.
+
+**Código del Bloque 2:**
+
+```python
+import pygame
+pygame.init()
+
+ANCHO, ALTO = 1280, 720
+pantalla = pygame.display.set_mode((ANCHO, ALTO))
+pygame.display.set_caption("Parallax — Bloque 2")
+
+# Lista con nombres de capas
+nombres_capas = [
+    "sky",
+    "clouds_1",
+    "clouds_2",
+    "clouds_3",
+    "clouds_4",
+    "rocks_1",
+    "rocks_2"
+]
+
+# Carga de imágenes
+capas = [pygame.image.load(f"assets/game_background_1/layers/{n}.png") for n in nombres_capas]
+
+# Velocidades relativas (capas traseras → más lento; delanteras → más rápido)
+vel = [0.1, 0.3, 0.5, 0.8, 1.0, 2.0, 3.0]
+
+# Posiciones iniciales duplicadas
+x1 = [0 for _ in capas]
+x2 = [capa.get_width() for capa in capas]
+
+reloj = pygame.time.Clock()
+ejecutando = True
+
+while ejecutando:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            ejecutando = False
+
+    pantalla.fill((0,0,0))
+
+    for i, capa in enumerate(capas):
+        x1[i] -= vel[i]
+        x2[i] -= vel[i]
+
+        ancho = capas[i].get_width()
+
+        # Reinicio cuando una imagen termina su recorrido
+        if x1[i] <= -ancho:
+            x1[i] = ancho
+        if x2[i] <= -ancho:
+            x2[i] = ancho
+
+        # Dibujar doble capa para efecto continuo
+        pantalla.blit(capa, (x1[i], 0))
+        pantalla.blit(capa, (x2[i], 0))
+
+    pygame.display.update()
+    reloj.tick(60)
+
+pygame.quit()
+```
+
+---
+
+## **6. Código final integrado**
+
+A continuación se presenta el código completo que combina los bloques anteriores en una sola versión funcional.
+
+```python
+import pygame
+pygame.init()
+
+ANCHO, ALTO = 1280, 720
+pantalla = pygame.display.set_mode((ANCHO, ALTO))
+pygame.display.set_caption("Práctica Parallax — game_background_1")
+
+# Lista de capas en orden de profundidad
+nombres_capas = [
+    "sky",
+    "clouds_1",
+    "clouds_2",
+    "clouds_3",
+    "clouds_4",
+    "rocks_1",
+    "rocks_2"
+]
+
+# Carga de imágenes
+capas = [pygame.image.load(f"assets/game_background_1/layers/{n}.png") for n in nombres_capas]
+
+# Velocidades relativas (más cercano → más rápido)
+vel = [0.1, 0.3, 0.5, 0.8, 1.0, 2.0, 3.0]
+
+# Posiciones X iniciales para movimiento continuo
+x1 = [0 for _ in capas]
+x2 = [capa.get_width() for capa in capas]
+
+reloj = pygame.time.Clock()
+ejecutando = True
+
+while ejecutando:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            ejecutando = False
+
+    pantalla.fill((0,0,0))
+
+    for i, capa in enumerate(capas):
+        x1[i] -= vel[i]
+        x2[i] -= vel[i]
+
+        ancho = capas[i].get_width()
+
+        # Reinicio de posición al salir de la pantalla
+        if x1[i] <= -ancho:
+            x1[i] = ancho
+        if x2[i] <= -ancho:
+            x2[i] = ancho
+
+        pantalla.blit(capa, (x1[i], 0))
+        pantalla.blit(capa, (x2[i], 0))
+
+    pygame.display.update()
+    reloj.tick(60)
+
+pygame.quit()
+```
+
+---
+
+## **7. Actividad de comprobación**
+
+El estudiante deberá responder:
+
+1. ¿Qué diferencia existe entre la velocidad asignada a las capas del fondo y las capas delanteras?
+2. ¿Qué propósito tiene dibujar dos copias de cada capa en la pantalla?
+3. ¿Qué ocurriría si no se reiniciara la posición de una capa al salir del área visible?
+4. Modifique la práctica para invertir la dirección del desplazamiento y describa los cambios realizados.
+
